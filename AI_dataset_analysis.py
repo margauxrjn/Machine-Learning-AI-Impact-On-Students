@@ -8,6 +8,11 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score, davies_bouldin_score
+from sklearn.cluster import AgglomerativeClustering
+from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
+from sklearn.cluster import AgglomerativeClustering
+from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
+from sklearn.cluster import MiniBatchKMeans
 
 DATA_PATH = Path("ai_student_impact_dataset.csv")
 
@@ -104,3 +109,62 @@ display(df["Cluster"].value_counts().to_frame("Number of students"))
 print("\nCluster global profile :")
 cluster_profile = df.groupby("Cluster")[continuous_features].mean().round(2)
 display(cluster_profile)
+
+#--------------------------------------------------------------
+
+
+n_micro_clusters = 500
+mbk = MiniBatchKMeans(
+    n_clusters=n_micro_clusters, batch_size=1024, random_state=42
+)
+mbk.fit(X_scaled)
+
+centroids = mbk.cluster_centers_
+
+Z_fast = linkage(centroids, method='ward')
+
+
+plt.figure(figsize=(18, 7))
+dendrogram(
+    Z_fast,
+    leaf_rotation=90,
+    leaf_font_size=6,
+)
+
+plt.title("AHC truncated Dendrogram of Students (Ward linkage)")
+plt.xlabel("Student")
+plt.ylabel("Ward distance")
+plt.tight_layout()
+plt.show()
+
+distance_threshold = 25.0
+
+
+clusters_by_distance = fcluster(Z_fast, t=distance_threshold, criterion="distance")
+
+final_sample_clusters = clusters_by_distance[mbk.labels_]
+
+
+data_by_distance = df.copy()
+data_by_distance["Cluster"] = final_sample_clusters
+print("Number of clusters:", data_by_distance["Cluster"].nunique())
+display(data_by_distance.sort_values("Cluster").head(20))
+
+
+plt.figure(figsize=(10, 7))
+scatter = plt.scatter(
+    #data_by_distance["Pre_Semester_GPA"],
+    data_by_distance["Weekly_GenAI_Hours"],
+    #data_by_distance["Traditional_Study_Hours"],
+    data_by_distance["Post_Semester_GPA"],
+    #data_by_distance["Skill_Retention_Score"],
+    c=data_by_distance["Cluster"],
+    cmap="viridis",
+    alpha=0.8
+)
+plt.title("AHC clusters: Pre_Semester_GPA vs Post_Semester_GPA")
+plt.xlabel("Weekly use of generative AI (hours)")
+plt.ylabel("Post Semester GPA")
+plt.colorbar(scatter, label="Cluster")
+plt.tight_layout()
+plt.show()
