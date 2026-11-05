@@ -29,8 +29,6 @@ categorical_features = [col for col in df.columns if col not in continuous_featu
 
 print("Continuous features:\n", continuous_features)
 print("Categorical features:\n", categorical_features)
-
-
 print("Dataset information:")
 df.info()
 print("\nMissing values per column:")
