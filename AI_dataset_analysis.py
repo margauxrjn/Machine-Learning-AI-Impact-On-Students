@@ -13,7 +13,7 @@ DATA_PATH = Path("ai_student_impact_dataset.csv")
 
 df = pd.read_csv(DATA_PATH)
 
-#Suppression de la colonne Student_ID
+
 df = df.drop(columns=["Student_ID"])
 print("\nColumn Student_ID is deleted !")
 
@@ -30,81 +30,79 @@ categorical_features = [col for col in df.columns if col not in continuous_featu
 print("Continuous features:\n", continuous_features)
 print("Categorical features:\n", categorical_features)
 
-#Je t'aime Margaux
 
 print("Dataset information:")
 df.info()
 print("\nMissing values per column:")
 display(df.isna().sum().to_frame("Missing values"))
 
-# 1. Standardisation directe des variables continues (sans imputation)
+
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(df[continuous_features])
 
-# 2. Recherche du nombre optimal de clusters (k de 2 à 10)
+
 K_range = range(2, 20)
 inertias = []
 silhouette_scores = []
 db_scores = []
 
 for k in K_range:
-    print(f"Calcul en cours pour k = {k}...")  # Permet de suivre l'avancement dans la console !
-    kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
+    print(f"Computing k = {k}...")
+    kmeans = KMeans(n_clusters=k, init='k-means++', n_init='auto')
     labels = kmeans.fit_predict(X_scaled)
 
     inertias.append(kmeans.inertia_)
-    # sample_size=2000 évite que Python bloque pendant 5 minutes sur les gros fichiers
-    silhouette_scores.append(silhouette_score(X_scaled, labels, sample_size=2000, random_state=42))
+
+    silhouette_scores.append(silhouette_score(X_scaled, labels, sample_size=2000, random_state=None))
     db_scores.append(davies_bouldin_score(X_scaled, labels))
 
-# 3. Affichage des 3 graphiques (Elbow, Silhouette, Davies-Bouldin)
+
 fig, axes = plt.subplots(1, 3, figsize=(18, 5))
 
-# Elbow Method (Inertie)
+
 axes[0].plot(K_range, inertias, marker='o', color='b')
-axes[0].set_title("Elbow Method (Inertie)")
-axes[0].set_xlabel("Nombre de clusters (k)")
-axes[0].set_ylabel("Inertie (WCSS)")
+axes[0].set_title("Elbow Method (Within-cluster inertia)")
+axes[0].set_xlabel("Number of clusters (k)")
+axes[0].set_ylabel("Within cluster (Sum of squares)")
 axes[0].grid(True)
 
-# Silhouette Score (Plus c'est HAUT, mieux c'est)
+
 axes[1].plot(K_range, silhouette_scores, marker='s', color='g')
-axes[1].set_title("Silhouette Score (Max = Meilleur)")
-axes[1].set_xlabel("Nombre de clusters (k)")
-axes[1].set_ylabel("Score de Silhouette")
+axes[1].set_title("Silhouette Score (Max = Best)")
+axes[1].set_xlabel("Number of clusters (k)")
+axes[1].set_ylabel("Silhouette score")
 axes[1].grid(True)
 
-# Davies-Bouldin Index (Plus c'est BAS, mieux c'est)
+
 axes[2].plot(K_range, db_scores, marker='^', color='r')
-axes[2].set_title("Davies-Bouldin Index (Min = Meilleur)")
-axes[2].set_xlabel("Nombre de clusters (k)")
-axes[2].set_ylabel("Indice de Davies-Bouldin")
+axes[2].set_title("Davies-Bouldin Index (Min = Best)")
+axes[2].set_xlabel("Number of clusters (k)")
+axes[2].set_ylabel("Davies-Bouldin Index")
 axes[2].grid(True)
 
 plt.tight_layout()
-plt.savefig("kmeans_evaluation.png", dpi=300) # Sauvegarde le graphique dans votre dossier projet
-print("Graphique sauvegardé sous 'kmeans_evaluation.png' !")
+plt.savefig("kmeans_evaluation.png", dpi=300)
+print("Graph saved as 'kmeans_evaluation.png' !")
 plt.show()
 
-# Tableau récapitulatif des scores
+
 metrics_df = pd.DataFrame({
     "k": list(K_range),
-    "Inertia": inertias,
+    "Within-cluster inertia": inertias,
     "Silhouette_Score": silhouette_scores,
     "Davies_Bouldin_Index": db_scores
 })
 display(metrics_df)
 
-# 4. Entraînement du modèle final et profilage pour l'interprétation
-# (Modifiez optimal_k selon les résultats de vos graphiques)
+
 optimal_k = 3
 
-kmeans_final = KMeans(n_clusters=optimal_k, random_state=42, n_init=10)
+kmeans_final = KMeans(n_clusters=optimal_k, random_state=None, n_init='auto')
 df["Cluster"] = kmeans_final.fit_predict(X_scaled)
 
-print("\nRépartition des étudiants par cluster :")
-display(df["Cluster"].value_counts().to_frame("Nombre d'étudiants"))
+print("\nStudents repartition per cluster :")
+display(df["Cluster"].value_counts().to_frame("Number of students"))
 
-print("\nProfil moyen de chaque cluster (valeurs réelles pour interprétation) :")
+print("\nCluster global profile :")
 cluster_profile = df.groupby("Cluster")[continuous_features].mean().round(2)
 display(cluster_profile)
