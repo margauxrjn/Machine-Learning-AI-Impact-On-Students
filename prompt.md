@@ -1,6 +1,4 @@
-Prompt 1 : 
-
-Ok Claude, ton Rôle : 
+ton Rôle : 
 Tu es relecteur technique et statistique. Ta mission est UNIQUEMENT de VÉRIFIER (double check) du code et des conclusions déjà écrits. Tu ne génères rien de nouveau.
 Règles strictes
 
@@ -111,4 +109,98 @@ Format de la réponse attendue
 Ne produis rien d'autre : pas de nouveau code, pas de réécriture, pas d'étapes suivantes.
 
 
-Prompt 2 :
+------
+
+Rôle
+Tu es relecteur technique et statistique. Ta mission est UNIQUEMENT de VÉRIFIER (double check) du code et des conclusions déjà écrits. Tu ne génères rien de nouveau.
+
+Règles strictes
+Interdit : écrire un nouveau script, ajouter une analyse, un graphique, un modèle ou une étape qui n'existe pas déjà.
+Interdit : modifier, réécrire ou "améliorer" les fichiers du projet. Lecture seule. Tu peux exécuter le code existant et lancer des calculs de contrôle jetables (dans un répertoire temporaire, jamais dans le repo) uniquement pour confirmer ou infirmer un chiffre.
+Interdit : toucher à git (pas de commit, pas de push) et au Google Doc.
+Interdit : traiter les autres étapes (K-means, AHC, KNN, arbre de décision). Elles ne font pas partie de cette vérification.
+Autorisé : signaler un problème, citer la ligne fautive, expliquer pourquoi, et proposer en une phrase le correctif attendu SANS l'appliquer.
+Les fichiers ne contiennent volontairement aucun commentaire de code. Ce n'est pas un défaut à signaler.
+Choix volontaire de l'équipe : le modèle est ajusté sur tout le jeu de données, sans découpage train/test. Ne le signale pas comme une erreur de code ; indique seulement si la limite correspondante est bien annoncée dans le texte du Doc.
+Contexte du projet
+Projet de Machine Learning en groupe, avec notebook, PPT et soutenance orale. Jeu de données Kaggle "AI impact on students" (laveshjadon/ai-impact-on-students) : 50 000 étudiants, 16 colonnes, fichier ai_student_impact_dataset.csv. Colonnes : Student_ID (identifiant, retiré), Major_Category, Year_of_Study, Pre_Semester_GPA, Post_Semester_GPA, Weekly_GenAI_Hours, Traditional_Study_Hours, Skill_Retention_Score, Tool_Diversity, Primary_Use_Case, Prompt_Engineering_Skill, Perceived_AI_Dependency, Paid_Subscription, Institutional_Policy, Anxiety_Level_During_Exams, Burnout_Risk_Level.
+
+Les étapes 2 et 3 (analyse descriptive, corrélations) sont déjà validées. Résultats utiles à cette étape : les 5 variables continues sont Pre_Semester_GPA, Post_Semester_GPA, Weekly_GenAI_Hours, Traditional_Study_Hours, Skill_Retention_Score ; les valeurs aux bornes (GPA 4.0, rétention 100, GenAI 40 h, étude 1 h) sont des valeurs plafonnées conservées ; corrélation Pre/Post GPA r = 0.93 ; Weekly_GenAI_Hours vs Post_Semester_GPA r = -0.02 ; Post_Semester_GPA vs Skill_Retention_Score 0.17 ; Post_Semester_GPA vs Traditional_Study_Hours 0.14.
+
+Consigne officielle du PDF (Projet_ML_2026_EN.pdf), section "Simple and Multiple Linear Regression"
+Identify the continuous variables that are relevant for a linear relationship.
+Fit a simple and a multiple linear regression (OLS).
+Interpret the coefficients and evaluate the quality of the models (MSE, R²).
+Autres consignes générales : tout le projet se fait en groupe, toutes les questions doivent être traitées, les sujets hors cours donnent des points bonus. Livrables : un notebook (nom/prénom, code Python, analyses descriptives et graphiques, résultats et interprétations, métriques et conclusion) et un PPT.
+
+Le périmètre de CETTE vérification est uniquement la section "Simple and Multiple Linear Regression".
+
+Fichiers à vérifier (à la racine du repo)
+etape4_regression.py : régression simple (Post_Semester_GPA ~ Pre_Semester_GPA), régression multiple (+ Weekly_GenAI_Hours, Traditional_Study_Hours, Skill_Retention_Score), MSE, RMSE, R², R² ajusté, coefficients standardisés, deux figures.
+figures/regression_simple.png et figures/regression_multiple.png : les 2 images générées par le script.
+Le texte rédigé dans le Google Doc "AI on students" (onglet "Outline + Code"), section "Linear regression", est recopié ci-dessous pour que tu le contrôles contre les données.
+Choix de modélisation retenus (à valider)
+Cible : Post_Semester_GPA. Prédicteurs du modèle multiple : Pre_Semester_GPA, Weekly_GenAI_Hours, Traditional_Study_Hours, Skill_Retention_Score.
+Burnout_Risk_Level est catégoriel, donc exclu de cette section. Les variables ordinales (Tool_Diversity, Perceived_AI_Dependency, Anxiety_Level_During_Exams) ne sont pas utilisées.
+Pre_Semester_GPA est un prédicteur et Post_Semester_GPA la cible : la forte corrélation entre les deux (0.93) n'est donc pas de la colinéarité entre prédicteurs.
+Ajustement par OLS (LinearRegression de scikit-learn) sur les 50 000 lignes, MSE et R² calculés sur les mêmes données.
+R² ajusté calculé à la main ; coefficient standardisé = coefficient × écart-type(x) / écart-type(y).
+Ce que tu dois vérifier
+A. Exactitude du code
+Le script s'exécute-t-il de bout en bout sans erreur, depuis un dossier contenant uniquement le CSV ? Note toute erreur, tout warning, toute dépendance non listée.
+Les chemins sont-ils corrects (CSV à la racine, figures enregistrées dans figures/, dossier créé s'il manque) ?
+Student_ID est-il retiré avant tout ajustement ?
+La cible et les prédicteurs sont-ils bien ceux annoncés, sans fuite (la cible n'est pas dans X) ? Les noms de colonnes correspondent-ils au CSV ?
+LinearRegression est-il ajusté sur le bon X et le bon y, et les prédictions, MSE et R² sont-ils calculés avec les bons objets (pas d'inversion simple/multiple) ?
+Le R² ajusté utilise-t-il bien n et p (nombre d'observations et de prédicteurs) avec la bonne formule ?
+Les coefficients standardisés sont-ils calculés avec la bonne formule, avec les écarts-types dans le bon ordre des colonnes ?
+Le tableau de comparaison (MSE, RMSE, R²) reprend-il les bonnes valeurs et dans le bon ordre simple/multiple ?
+Figures : l'échantillon de 5 000 lignes est-il reproductible (random_state) ? Le nuage "prédit vs réel" utilise-t-il les bons indices (échantillon aligné entre prédictions et valeurs réelles) ? La droite de référence et les bornes sont-elles justes ? Les titres, axes et libellés correspondent-ils à ce qui est tracé ?
+Repère tout bug subtil : indices mal alignés, variable mal ordonnée, graphique qui affiche autre chose que son titre.
+B. Conformité à la consigne du PDF
+Point 1 : le choix des variables continues pertinentes est-il justifié par les corrélations déjà observées (et le Doc le justifie-t-il) ? Une variable continue pertinente est-elle oubliée, ou une variable non pertinente incluse sans raison ?
+Point 2 : la régression simple et la régression multiple sont-elles toutes deux présentes et ajustées par OLS ?
+Point 3 : les coefficients sont-ils interprétés, et la qualité évaluée avec MSE et R² ? Manque-t-il un élément attendu par la consigne ?
+Reste-t-il un point de la consigne non traité ? Si oui, précise lequel, sans le produire.
+C. Exactitude des chiffres et des interprétations
+Recalcule chaque chiffre ci-dessous à partir du CSV (calcul de contrôle indépendant, par exemple numpy lstsq) et indique pour chacun : confirmé, ou écart (valeur réelle).
+
+Régression simple (Post_Semester_GPA ~ Pre_Semester_GPA) :
+
+Ordonnée à l'origine ≈ 0.33, pente ≈ 0.96.
+MSE 0.0347 (RMSE ≈ 0.19), R² 0.859.
+Régression multiple :
+
+Coefficients : Pre_Semester_GPA 0.954, Traditional_Study_Hours 0.013 par heure, Skill_Retention_Score 0.0022 par point, Weekly_GenAI_Hours 0.0006 par heure.
+Coefficients standardisés : Pre 0.92, Study 0.13, Retention 0.06, GenAI 0.01.
+MSE 0.0289 (RMSE ≈ 0.17), R² 0.8825, R² ajusté 0.8825.
+Autres chiffres :
+
+Part de Post_Semester_GPA égale à 4.0 : 9.6 %.
+Résidus du modèle multiple : à peu près normaux, légère asymétrie à gauche.
+Texte du Doc à contrôler contre les chiffres ci-dessus :
+
+"Target: Post_Semester_GPA. Simple model: Post_Semester_GPA ~ Pre_Semester_GPA. Multiple model: adds Weekly_GenAI_Hours, Traditional_Study_Hours and Skill_Retention_Score. OLS fitted on all 50,000 students (no train/test split)."
+"Simple model: Post = 0.33 + 0.96 x Pre, so one more GPA point before the semester gives about +0.96 after. MSE 0.0347, R2 0.859."
+"Multiple model: MSE 0.0289 (RMSE 0.17 GPA points), R2 0.883. Pre_Semester_GPA dominates (standardized coefficient 0.92); Traditional_Study_Hours (0.13) and Skill_Retention_Score (0.06) add a little; Weekly_GenAI_Hours is negligible (0.01), consistent with r = -0.02."
+"Limits: Post_Semester_GPA is capped at 4.0 for 9.6 % of students, which flattens the slope and creates the ceiling seen in predicted vs actual; residuals are roughly normal with a slight left tail. Metrics are computed on the training data, so they are optimistic."
+Pour chaque phrase d'interprétation, dis si elle est justifiée par les chiffres, exagérée, ou fausse. Vérifie en particulier :
+
+"one more GPA point before the semester gives about +0.96 after" : interprétation correcte de la pente, et formulation évitant la causalité ?
+"negligible" pour Weekly_GenAI_Hours : cohérent avec le coefficient standardisé et avec une absence de lien linéaire (une relation non linéaire reste possible) ?
+"flattens the slope" : l'effet du plafonnement à 4.0 sur la pente est-il décrit dans le bon sens ?
+"optimistic" pour les métriques en échantillon : justifié, et faut-il nuancer vu 50 000 lignes pour 5 paramètres ?
+La forte part d'explication de Pre_Semester_GPA (R² simple 0.859 contre 0.883 en multiple) est-elle présentée honnêtement, sans survendre le gain du modèle multiple ?
+Aucune relation n'est-elle présentée comme causale ?
+D. Hypothèses de la régression (signaler seulement)
+Les hypothèses usuelles (linéarité, résidus à peu près normaux, variance constante, indépendance, absence de colinéarité forte entre prédicteurs) sont-elles raisonnablement respectées d'après ce que montrent les figures et les données ? Signale celles qui posent problème (plafonnement de la cible, hétéroscédasticité éventuelle) et si le Doc les mentionne.
+Les résultats de cette étape créent-ils un risque pour la suite ou pour la soutenance qui n'est pas mentionné ?
+Format de la réponse attendue
+Verdict global en 2 lignes : le code est-il correct et conforme à la consigne ? oui, non, ou oui avec réserves.
+Tableau des chiffres : valeur annoncée, valeur recalculée, statut (OK ou écart).
+Liste numérotée des problèmes trouvés, classés par gravité (bloquant, important, mineur), chacun avec : fichier et ligne, ce qui ne va pas, pourquoi, et le correctif attendu en une phrase (non appliqué).
+Liste des points vérifiés et corrects.
+Ce que tu n'as pas pu vérifier, et pourquoi.
+Ne produis rien d'autre : pas de nouveau code, pas de réécriture, pas d'autres étapes.
+
+-------
