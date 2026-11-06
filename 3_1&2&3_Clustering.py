@@ -28,6 +28,7 @@ print(df.columns.tolist())
 print("\nFirst five rows:")
 display(df.head())
 
+#----------------------------------
 
 continuous_features = ["Pre_Semester_GPA","Weekly_GenAI_Hours","Traditional_Study_Hours","Post_Semester_GPA","Skill_Retention_Score"]
 categorical_features = [col for col in df.columns if col not in continuous_features]
@@ -39,7 +40,7 @@ df.info()
 print("\nMissing values per column:")
 display(df.isna().sum().to_frame("Missing values"))
 
-
+#------------------------------------
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(df[continuous_features])
 
