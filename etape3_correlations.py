@@ -53,3 +53,5 @@ plt.show()
 # %%
 df.assign(Burnout_Code=df["Burnout_Risk_Level"].map({"Low": 0, "Medium": 1, "High": 2}))[
     numeric_features + ["Burnout_Code"]].corr(method="spearman")["Burnout_Code"].drop("Burnout_Code").round(3).sort_values()
+
+#bonjour
